@@ -20,14 +20,15 @@ body {
 
 #terminal {
     white-space: pre-wrap;
-    flex: 1;               /* Terminal nimmt den restlichen Platz */
-    overflow-y: auto;      /* Scroll innerhalb des Terminals */
-    padding: 20px;
+    flex: 1;               /* nimmt den restlichen Platz */
+    overflow: hidden;      /* kein Scrollen */
+    padding: 10px;
+    font-size: 14px;       /* kleinere Schrift, damit alles passt */
 }
 
 .input-line {
     display: flex;
-    padding: 10px 20px;
+    padding: 5px 10px;
     border-top: 1px solid #333;
 }
 
@@ -62,9 +63,15 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const terminal = document.getElementById("terminal");
 const input = document.getElementById("commandInput");
 
+// Funktion zum Drucken, zeigt immer nur die letzten 15 Zeilen
 function print(text) {
     terminal.innerHTML += text + "\n";
-    window.scrollTo(0, document.body.scrollHeight);
+
+    // Maximal 15 Zeilen anzeigen
+    const lines = terminal.innerHTML.split("\n");
+    if (lines.length > 15) {
+        terminal.innerHTML = lines.slice(lines.length - 15).join("\n");
+    }
 }
 
 function parseArgs(str) {
@@ -186,6 +193,7 @@ input.addEventListener("keydown", e => {
     }
 });
 
+// Starttext
 print("Microsoft Windows [Version 10.0.22621.1848]");
 print("(c) Microsoft Corporation. Alle Rechte vorbehalten.\n");
 
