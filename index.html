@@ -12,16 +12,23 @@ body {
     color: white;
     font-family: Consolas, monospace;
     margin: 0;
-    padding: 20px;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 #terminal {
     white-space: pre-wrap;
-    min-height: 90vh;
+    flex: 1;               /* Terminal nimmt den restlichen Platz */
+    overflow-y: auto;      /* Scroll innerhalb des Terminals */
+    padding: 20px;
 }
 
 .input-line {
     display: flex;
+    padding: 10px 20px;
+    border-top: 1px solid #333;
 }
 
 input {
