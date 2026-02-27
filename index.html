@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>WebTerminal</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+    background: black;
+    color: white;
+    font-family: Consolas, monospace;
+    margin: 0;
+    padding: 20px;
+}
+
+#terminal {
+    white-space: pre-wrap;
+    min-height: 90vh;
+}
+
+.input-line {
+    display: flex;
+}
+
+input {
+    background: black;
+    border: none;
+    color: white;
+    font-family: Consolas, monospace;
+    font-size: 16px;
+    outline: none;
+    width: 100%;
+}
+</style>
+</head>
+<body>
+
+<div id="terminal"></div>
+
+<div class="input-line">
+<span>C:\Users\User&gt; </span>
+<input id="commandInput" autofocus />
+</div>
+
+<script>
+
+// 🔥 HIER DEINE SUPABASE DATEN EINTRAGEN
+const SUPABASE_URL = "DEINE_URL";
+const SUPABASE_KEY = "DEIN_PUBLIC_KEY";
+
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("commandInput");
+
+function print(text) {
+    terminal.innerHTML += text + "\n";
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
+function parseArgs(str) {
+    const regex = /--([a-zA-Z0-9_-]+)\s+"([^"]+)"/g;
+    let match;
+    let obj = {};
+
+    while ((match = regex.exec(str)) !== null) {
+        obj[match[1].toLowerCase()] = match[2];
+    }
+
+    return obj;
+}
+
+async function handleCommand(cmd) {
+
+    print("C:\\Users\\User> " + cmd);
+
+    if (cmd.startsWith("save")) {
+        const args = parseArgs(cmd);
+
+        if (Object.keys(args).length === 0) {
+            print("Fehler: Keine Daten angegeben.");
+            return;
+        }
+
+        const { error } = await client
+            .from("terminal_users")
+            .insert([{ data: args }]);
+
+        if (error) {
+            print("Fehler beim Speichern.");
+        } else {
+            print("Gespeichert.");
+        }
+    }
+
+    else if (cmd === "show") {
+
+        const { data, error } = await client
+            .from("terminal_users")
+            .select("*");
+
+        if (error) {
+            print("Fehler beim Laden.");
+            return;
+        }
+
+        if (data.length === 0) {
+            print("Keine Einträge.");
+            return;
+        }
+
+        data.forEach(entry => {
+            print("ID: " + entry.id);
+            for (let key in entry.data) {
+                print("  " + key + ": " + entry.data[key]);
+            }
+            print("");
+        });
+    }
+
+    else if (cmd.startsWith("delete")) {
+        const idMatch = cmd.match(/--id\s+(\d+)/);
+
+        if (!idMatch) {
+            print("Bitte --id angeben.");
+            return;
+        }
+
+        const id = parseInt(idMatch[1]);
+
+        await client
+            .from("terminal_users")
+            .delete()
+            .eq("id", id);
+
+        print("Eintrag gelöscht.");
+    }
+
+    else if (cmd.startsWith("change")) {
+        const idMatch = cmd.match(/--id\s+(\d+)/);
+
+        if (!idMatch) {
+            print("Bitte --id angeben.");
+            return;
+        }
+
+        const id = parseInt(idMatch[1]);
+        const args = parseArgs(cmd);
+
+        delete args.id;
+
+        await client
+            .from("terminal_users")
+            .update({ data: args })
+            .eq("id", id);
+
+        print("Eintrag aktualisiert.");
+    }
+
+    else if (cmd === "help") {
+        print("save --name \"Text\" --hobby \"Text\"");
+        print("show");
+        print("delete --id 1");
+        print("change --id 1 --rank \"Admin\"");
+        print("help");
+    }
+
+    else {
+        print("'" + cmd + "' ist kein gültiger Befehl.");
+    }
+}
+
+input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+        handleCommand(input.value.trim());
+        input.value = "";
+    }
+});
+
+print("Microsoft Windows [Version 10.0.22621.1848]");
+print("(c) Microsoft Corporation. Alle Rechte vorbehalten.\n");
+
+</script>
+</body>
+</html>
